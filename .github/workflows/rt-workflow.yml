@@ -63,12 +63,12 @@ jobs:
         jfrog mvn spring-boot:build-image -Dspring-boot.build-image.imageName=omri-petclinic:1.0-$GITHUB_RUN_NUMBER -DskipTests
     - name: Log in to Artifactory Docker registry
       run: |
-        echo ${{ secrets.JF_PASSWORD }} | docker login -u ${{ secrets.JF_USER }} --password-stdin omriz.jfrog.io
+        echo ${{ secrets.JF_PASSWORD }} | docker login -u ${{ secrets.JF_USER }} --password-stdin omriziv.jfrog.io
 
     - name: Push Docker image to Artifactory
       run: |
-        docker tag omri-petclinic:1.0-$GITHUB_RUN_NUMBER omriz.jfrog.io/docker-trial/omri-petclinic:1.0-$GITHUB_RUN_NUMBER 
-        jfrog rt dp omriz.jfrog.io/docker-trial/omri-petclinic:1.0-$GITHUB_RUN_NUMBER docker-trial --build-name=omriz-pet-clinic-docker --build-number=$GITHUB_RUN_NUMBER
+        docker tag omri-petclinic:1.0-$GITHUB_RUN_NUMBER omriziv.jfrog.io/docker-trial/omri-petclinic:1.0-$GITHUB_RUN_NUMBER 
+        jfrog rt dp omriziv.jfrog.io/docker-trial/omri-petclinic:1.0-$GITHUB_RUN_NUMBER docker-trial --build-name=omriz-pet-clinic-docker --build-number=$GITHUB_RUN_NUMBER
     - name: Publish build info to Artifactory
       run: |
         jfrog rt build-publish omriz-pet-clinic-docker $GITHUB_RUN_NUMBER
