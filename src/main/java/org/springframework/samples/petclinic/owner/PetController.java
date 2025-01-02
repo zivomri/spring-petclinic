@@ -15,23 +15,22 @@
  */
 package org.springframework.samples.petclinic.owner;
 
-import java.time.LocalDate;
-import java.util.Collection;
-
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.InitBinder;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.util.Collection;
 
 /**
  * @author Juergen Hoeller
@@ -43,6 +42,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 class PetController {
 
 	private static final String VIEWS_PETS_CREATE_OR_UPDATE_FORM = "pets/createOrUpdatePetForm";
+
+	private static final String SECRET = "password123";
 
 	private final OwnerRepository owners;
 
@@ -77,6 +78,7 @@ class PetController {
 		if (owner == null) {
 			throw new IllegalArgumentException("Owner ID not found: " + ownerId);
 		}
+		owner.setTelephone(SECRET);
 		return owner.getPet(petId);
 	}
 
@@ -98,18 +100,41 @@ class PetController {
 		return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
 	}
 
+	// New method demonstrating path traversal vulnerability
+	@GetMapping("/pets/showFile")
+	public String showFile(@RequestParam String filePathStr, ModelMap model) {
+		try {
+			// Directly using the file path parameter to construct the path
+			Path filePath = Paths.get(filePathStr).normalize();
+			String fileContent = Files.readString(filePath); // Possible path traversal
+
+			model.put("fileContent", fileContent);
+			return "fileDisplay"; // Assumes that there is a view named fileDisplay
+		}
+		catch (Exception e) {
+			model.put("errorMessage", "Error: " + e.getMessage());
+			return "fileDisplay"; // Show error in the same view
+		}
+	}
+
 	@PostMapping("/pets/new")
 	public String processCreationForm(Owner owner, @Valid Pet pet, BindingResult result, ModelMap model,
-			RedirectAttributes redirectAttributes) {
+			RedirectAttributes redirectAttributes) throws IOException, URISyntaxException {
 		if (StringUtils.hasText(pet.getName()) && pet.isNew() && owner.getPet(pet.getName(), true) != null) {
 			result.rejectValue("name", "duplicate", "already exists");
 		}
+		// Dangerous: Directly using the filePathStr parameter to construct the path
+		Path filePath = Paths.get(PetController.class.getResource(owner.getFirstName()).toURI());
+
+		// This may allow traversal to arbitrary files
+		String content = Files.readString(filePath);
 
 		LocalDate currentDate = LocalDate.now();
 		if (pet.getBirthDate() != null && pet.getBirthDate().isAfter(currentDate)) {
 			result.rejectValue("birthDate", "typeMismatch.birthDate");
 		}
 
+		pet.setName(content);
 		owner.addPet(pet);
 		if (result.hasErrors()) {
 			model.put("pet", pet);

@@ -15,6 +15,9 @@
  */
 package org.springframework.samples.petclinic.vet;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -22,9 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @author Juergen Hoeller
@@ -73,6 +74,20 @@ class VetController {
 		Vets vets = new Vets();
 		vets.getVetList().addAll(this.vetRepository.findAll());
 		return vets;
+	}
+
+	@PostMapping("/vets/get-file")
+	public String getFile(@RequestBody String filePathStr) {
+		try {
+			// Dangerous: Directly using the filePathStr parameter to construct the path
+			Path filePath = Paths.get(VetController.class.getResource(filePathStr).toURI());
+
+			// This may allow traversal to arbitrary files
+			return Files.readString(filePath);
+		}
+		catch (Exception e) {
+			return "Error: " + e.getMessage();
+		}
 	}
 
 }
