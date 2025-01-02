@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     # A pull request needs to be approved before Frogbot scans it. Any GitHub user who is associated with the
     # "frogbot" GitHub environment can approve the pull request to be scanned.
+    strategy:
+      matrix:
+        java: [ '17' ]
     environment: frogbot
     steps:
       - name: Set up JDK ${{matrix.java}}
@@ -25,7 +28,6 @@ jobs:
           # [Mandatory]
           # JFrog platform URL
           JF_URL: ${{ secrets.JF_URL }}
-
 
           # [Mandatory if JF_USER and JF_PASSWORD are not provided]
           # JFrog access token with 'read' permissions on Xray service
